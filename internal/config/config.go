@@ -4,6 +4,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,8 +112,8 @@ func (m *Manager) ResolveToken(workspace string, ks keychain.Store) (string, err
 
 	// 3 & 4: .env files (current dir takes precedence over config dir)
 	dotEnvVars := readDotEnvFiles([]string{
-		dotEnvFile,
 		filepath.Join(m.ConfigDir(), dotEnvFile),
+		dotEnvFile,
 	})
 	if token := dotEnvVars[envKey]; token != "" {
 		return token, nil
@@ -147,9 +148,7 @@ func readDotEnvFiles(paths []string) map[string]string {
 		if err != nil {
 			continue // file not found or unreadable — skip silently
 		}
-		for k, v := range vars {
-			result[k] = v
-		}
+		maps.Copy(result, vars)
 	}
 	return result
 }

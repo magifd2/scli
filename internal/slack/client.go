@@ -42,7 +42,6 @@ type apiResponse struct {
 // get calls a Slack API method with URL-encoded query parameters and decodes
 // the JSON response into dst.
 func (c *Client) get(ctx context.Context, method string, params url.Values, dst interface{}) error {
-	params.Set("limit", params.Get("limit")) // keep caller-supplied limit
 	rawURL := c.baseURL + "/" + method + "?" + params.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
