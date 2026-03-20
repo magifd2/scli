@@ -77,6 +77,7 @@ All contributors (including Claude Code) must follow these rules.
   1. Write a high-level design document (`docs/design/`).
   2. Produce a development plan with phases and milestones.
   3. Get explicit sign-off before starting implementation.
+- When integrating with external APIs (e.g., Slack Web API), enumerate **all required OAuth scopes** at design time and cross-check them against every API method that will be called. Discovering a missing scope at runtime is a preventable error.
 
 ## 14. Native Code: Go + Make + Cross-Compilation
 
@@ -86,6 +87,7 @@ All contributors (including Claude Code) must follow these rules.
   - If Windows support is not feasible due to OS-level constraints, `linux` and `darwin` are acceptable.
 - Cross-compilation must work from a single host machine (use `GOOS`/`GOARCH` variables).
 - Code style: enforced via `gofmt` and `golangci-lint`.
+- `golangci-lint` must be installed via `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` to ensure it is built with a Go version ≥ the project's `go` directive. Package-manager installs (e.g., Homebrew) may lag behind and produce a version mismatch error.
 
 ## 15. Python: uv Virtual Environments
 
@@ -149,6 +151,14 @@ All contributors (including Claude Code) must follow these rules.
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`).
 - Maintain a `CHANGELOG.md` updated with every release.
 - Tag releases in Git (`v1.2.3`) before distributing artifacts.
+
+### Release artifact process
+
+1. Ensure the working tree is clean (`git status` shows no modifications) so that `git describe --tags --dirty` produces a clean version string (e.g., `v1.2.3`).
+2. Run `make build-all` to produce binaries under `dist/` with the correct embedded version.
+3. Zip each binary: `zip scli-<os>-<arch>-<version>.zip scli-<os>-<arch>`.
+4. Create the GitHub Release with `gh release create <tag> dist/*.zip --title "<tag>" --notes "..."`.
+5. Restore the SSH remote URL if it was temporarily switched to HTTPS for pushing.
 
 ---
 
