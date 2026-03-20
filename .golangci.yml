@@ -1,0 +1,39 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck      # no ignored errors
+    - govet         # Go vet checks
+    - staticcheck   # advanced static analysis
+    - misspell      # spelling in comments/strings
+    - revive        # general style rules
+    - gosec         # security checks
+    - unused        # unused code detection
+  settings:
+    errcheck:
+      # Writing to io.Writer (stdout/terminal) and defer Close errors are
+      # not actionable in a CLI tool.
+      exclude-functions:
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Fprint
+        - (io.Closer).Close
+    gosec:
+      excludes:
+        - G101  # false positive: URL constants and test tokens are not credentials
+        - G704  # false positive: URL is constructed from a controlled base URL
+        - G120  # false positive: test servers only, no production risk
+        - G304  # intentional: user-supplied file path for upload command
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - "checkPrivateReceivers"
+
+formatters:
+  enable:
+    - gofmt         # formatting
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
