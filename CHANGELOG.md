@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-23
+
+### Added
+
+- **Block Kit support for `post` command**: Post rich messages using Slack's Block Kit JSON format.
+  - `--blocks <json>` — inline JSON array string
+  - `--blocks-file <path>` — read JSON from a file (`-` reads from stdin)
+  - `[message]` argument is now optional when blocks are provided (used as notification fallback text)
+  - Designed for use with tools like [md-to-slack](https://github.com/magifd2/md-to-slack)
+
 ## [1.0.1] - 2026-03-20
 
 ### Fixed
