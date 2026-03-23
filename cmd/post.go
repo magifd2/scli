@@ -1,32 +1,52 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	postFile   string
-	postThread string
+	postFile      string
+	postThread    string
+	postBlocks    string
+	postBlockFile string
 )
 
 var postCmd = &cobra.Command{
-	Use:   "post <channel> <message>",
+	Use:   "post <channel> [message]",
 	Short: "Post a message to a channel",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.RangeArgs(1, 2),
 	RunE:  runPost,
 }
 
 func init() {
 	postCmd.Flags().StringVar(&postFile, "file", "", "Attach a file to the message")
 	postCmd.Flags().StringVar(&postThread, "thread", "", "Reply in a thread (message timestamp)")
+	postCmd.Flags().StringVar(&postBlocks, "blocks", "", "Block Kit JSON to post (JSON array string)")
+	postCmd.Flags().StringVar(&postBlockFile, "blocks-file", "", "Path to a file containing Block Kit JSON (\"-\" reads from stdin)")
 	rootCmd.AddCommand(postCmd)
 }
 
 func runPost(cmd *cobra.Command, args []string) error {
 	nameOrID := args[0]
-	text := unescapeText(args[1])
+
+	// Resolve blocks JSON from flag or file.
+	blocksJSON, err := resolveBlocksJSON()
+	if err != nil {
+		return err
+	}
+
+	// <message> is required when not posting blocks; optional with blocks.
+	text := ""
+	if len(args) >= 2 {
+		text = unescapeText(args[1])
+	} else if blocksJSON == "" {
+		return fmt.Errorf("message argument is required when --blocks / --blocks-file is not provided")
+	}
 
 	client, err := newSlackClient()
 	if err != nil {
@@ -49,10 +69,18 @@ func runPost(cmd *cobra.Command, args []string) error {
 	}
 
 	var ts string
-	if postThread != "" {
-		ts, err = client.PostThreadReply(cmd.Context(), channelID, postThread, text)
+	if blocksJSON != "" {
+		if postThread != "" {
+			ts, err = client.PostThreadReplyWithBlocks(cmd.Context(), channelID, postThread, text, blocksJSON)
+		} else {
+			ts, err = client.PostMessageWithBlocks(cmd.Context(), channelID, text, blocksJSON)
+		}
 	} else {
-		ts, err = client.PostMessage(cmd.Context(), channelID, text)
+		if postThread != "" {
+			ts, err = client.PostThreadReply(cmd.Context(), channelID, postThread, text)
+		} else {
+			ts, err = client.PostMessage(cmd.Context(), channelID, text)
+		}
 	}
 	if err != nil {
 		return fmt.Errorf("post message: %w", err)
@@ -61,4 +89,39 @@ func runPost(cmd *cobra.Command, args []string) error {
 	p := newPrinter(cmd)
 	p.Success(fmt.Sprintf("Message posted (ts: %s)", ts))
 	return nil
+}
+
+// resolveBlocksJSON returns the Block Kit JSON string from the --blocks flag,
+// the --blocks-file flag (supports "-" for stdin), or empty string if neither is set.
+// Returns an error if both flags are set simultaneously or if the JSON is invalid.
+func resolveBlocksJSON() (string, error) {
+	if postBlocks != "" && postBlockFile != "" {
+		return "", fmt.Errorf("--blocks and --blocks-file are mutually exclusive")
+	}
+
+	var raw string
+
+	switch {
+	case postBlocks != "":
+		raw = postBlocks
+	case postBlockFile != "":
+		var data []byte
+		var err error
+		if postBlockFile == "-" {
+			data, err = io.ReadAll(os.Stdin)
+		} else {
+			data, err = os.ReadFile(postBlockFile) //nolint:gosec
+		}
+		if err != nil {
+			return "", fmt.Errorf("read blocks file: %w", err)
+		}
+		raw = string(data)
+	default:
+		return "", nil
+	}
+
+	if !json.Valid([]byte(raw)) {
+		return "", fmt.Errorf("blocks JSON is invalid")
+	}
+	return raw, nil
 }

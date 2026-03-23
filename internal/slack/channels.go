@@ -199,3 +199,41 @@ func (c *Client) PostThreadReply(ctx context.Context, channelID, threadTS, text 
 	}
 	return resp.TS, nil
 }
+
+// PostMessageWithBlocks sends a message with Block Kit blocks to the given channel.
+// text is used as the notification fallback; blocksJSON is a JSON-encoded array of block objects.
+func (c *Client) PostMessageWithBlocks(ctx context.Context, channelID, text, blocksJSON string) (string, error) {
+	params := url.Values{
+		"channel": {channelID},
+		"text":    {text},
+		"blocks":  {blocksJSON},
+	}
+
+	var resp struct {
+		TS string `json:"ts"`
+	}
+
+	if err := c.post(ctx, "chat.postMessage", params, &resp); err != nil {
+		return "", fmt.Errorf("chat.postMessage (blocks): %w", err)
+	}
+	return resp.TS, nil
+}
+
+// PostThreadReplyWithBlocks sends a Block Kit message as a reply to a thread.
+func (c *Client) PostThreadReplyWithBlocks(ctx context.Context, channelID, threadTS, text, blocksJSON string) (string, error) {
+	params := url.Values{
+		"channel":   {channelID},
+		"text":      {text},
+		"thread_ts": {threadTS},
+		"blocks":    {blocksJSON},
+	}
+
+	var resp struct {
+		TS string `json:"ts"`
+	}
+
+	if err := c.post(ctx, "chat.postMessage", params, &resp); err != nil {
+		return "", fmt.Errorf("chat.postMessage (blocks thread): %w", err)
+	}
+	return resp.TS, nil
+}

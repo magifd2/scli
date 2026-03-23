@@ -7,6 +7,7 @@ Read channels, send messages, search, and manage DMs — all without leaving you
 
 - Read channel and DM messages with thread expansion
 - Post messages and reply to threads (supports `\n` for newlines)
+- Post [Block Kit](https://api.slack.com/block-kit) messages from JSON (file, stdin, or inline)
 - Upload files to channels
 - List unread channels and DMs
 - Search messages across the workspace
@@ -47,7 +48,7 @@ scli auth login
 | `scli dm list` | List open DM conversations |
 | `scli dm read <user>` | Read DM messages |
 | `scli dm send <user> <message>` | Send a direct message |
-| `scli post <channel> <message>` | Post a message to a channel |
+| `scli post <channel> [message]` | Post a message to a channel |
 | `scli search <query>` | Search messages in the workspace |
 | `scli unread` | Show channels and DMs with unread messages |
 | `scli user list` | List workspace members |
@@ -73,8 +74,29 @@ scli auth login
 ### post options
 
 ```
---file <path>     Attach a file to the message
---thread <ts>     Reply in a thread
+--file <path>         Attach a file to the message
+--thread <ts>         Reply in a thread
+--blocks <json>       Block Kit JSON array (inline string)
+--blocks-file <path>  Block Kit JSON from a file ("-" reads from stdin)
+```
+
+When `--blocks` or `--blocks-file` is used, `[message]` becomes the notification fallback text
+and may be omitted. The two flags are mutually exclusive.
+
+#### Block Kit examples
+
+```sh
+# Inline JSON
+scli post '#general' 'Hello' --blocks '[{"type":"section","text":{"type":"mrkdwn","text":"*Hello*"}}]'
+
+# From a file
+scli post '#general' 'Hello' --blocks-file blocks.json
+
+# From stdin (e.g. piped from md-to-slack)
+md-to-slack input.md | scli post '#general' 'Hello' --blocks-file -
+
+# Without fallback text (blocks only)
+md-to-slack input.md | scli post '#general' --blocks-file -
 ```
 
 ### search options

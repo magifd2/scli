@@ -7,6 +7,7 @@
 
 - チャンネル・DM メッセージの読み取り（スレッド展開対応）
 - メッセージ投稿・スレッド返信（`\n` で改行可能）
+- [Block Kit](https://api.slack.com/block-kit) JSON によるリッチメッセージ投稿（ファイル・stdin・インライン対応）
 - チャンネルへのファイルアップロード
 - 未読チャンネル・DM の一覧表示
 - ワークスペース全体のメッセージ検索
@@ -47,7 +48,7 @@ scli auth login
 | `scli dm list` | オープン中 DM 一覧 |
 | `scli dm read <user>` | DM を読む |
 | `scli dm send <user> <message>` | DM を送る |
-| `scli post <channel> <message>` | チャンネルにメッセージを投稿 |
+| `scli post <channel> [message]` | チャンネルにメッセージを投稿 |
 | `scli search <query>` | メッセージを検索 |
 | `scli unread` | 未読チャンネル・DM を表示 |
 | `scli user list` | ワークスペースメンバー一覧 |
@@ -73,8 +74,29 @@ scli auth login
 ### post オプション
 
 ```
---file <path>     ファイルを添付
---thread <ts>     スレッドに返信
+--file <path>         ファイルを添付
+--thread <ts>         スレッドに返信
+--blocks <json>       Block Kit JSON 配列（インライン文字列）
+--blocks-file <path>  Block Kit JSON をファイルから読み込む（"-" は stdin）
+```
+
+`--blocks` または `--blocks-file` を使う場合、`[message]` は通知フォールバックテキストとなり省略可能です。
+両フラグは同時に使用できません。
+
+#### Block Kit の使用例
+
+```sh
+# インライン JSON
+scli post '#general' 'Hello' --blocks '[{"type":"section","text":{"type":"mrkdwn","text":"*Hello*"}}]'
+
+# ファイルから読み込む
+scli post '#general' 'Hello' --blocks-file blocks.json
+
+# stdin から読み込む（md-to-slack などとパイプ接続）
+md-to-slack input.md | scli post '#general' 'Hello' --blocks-file -
+
+# フォールバックテキストなし（blocks のみ）
+md-to-slack input.md | scli post '#general' --blocks-file -
 ```
 
 ### search オプション
