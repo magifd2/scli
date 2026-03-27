@@ -141,3 +141,8 @@ func retryAfterDuration(header string) time.Duration {
 	}
 	return 5 * time.Second
 }
+
+// RetryAfterDurationForTest exposes retryAfterDuration for use in tests.
+func RetryAfterDurationForTest(header string) time.Duration {
+	return retryAfterDuration(header)
+}

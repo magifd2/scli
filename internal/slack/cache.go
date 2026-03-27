@@ -31,6 +31,16 @@ func loadCache[T any](path string, ttl time.Duration) (T, bool) {
 	return env.Data, true
 }
 
+// LoadCacheForTest exposes loadCache for use in tests.
+func LoadCacheForTest[T any](path string, ttl time.Duration) (T, bool) {
+	return loadCache[T](path, ttl)
+}
+
+// SaveCacheForTest exposes saveCache for use in tests.
+func SaveCacheForTest[T any](path string, data T) {
+	saveCache(path, data)
+}
+
 // saveCache writes data to a JSON cache file. Errors are silently ignored
 // because a failed cache write must never break the main operation.
 func saveCache[T any](path string, data T) {

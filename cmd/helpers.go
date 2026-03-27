@@ -13,6 +13,9 @@ import (
 // newSlackClient resolves the current workspace token and returns a Slack client
 // with the workspace-specific disk cache configured.
 func newSlackClient() (*slack.Client, error) {
+	if newSlackClientOverride != nil {
+		return newSlackClientOverride()
+	}
 	token, cacheDir, err := resolveTokenAndCacheDir()
 	if err != nil {
 		return nil, err

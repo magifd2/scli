@@ -3,12 +3,15 @@ package cmd
 import (
 	"github.com/magifd2/scli/internal/config"
 	"github.com/magifd2/scli/internal/keychain"
+	"github.com/magifd2/scli/internal/slack"
 )
 
 // Service factories — overridable in tests.
 var (
 	newKeychainStore func() keychain.Store           = func() keychain.Store { return &keychain.OSStore{} }
 	newConfigManager func() (*config.Manager, error) = config.DefaultManager
+	// newSlackClientOverride is non-nil only during tests.
+	newSlackClientOverride func() (*slack.Client, error)
 )
 
 // defaultKeychainStore and defaultConfigManager hold the original production factories.
@@ -24,8 +27,15 @@ func SetServicesForTest(ks keychain.Store, mgr *config.Manager) {
 	newConfigManager = func() (*config.Manager, error) { return mgr, nil }
 }
 
+// SetSlackClientForTest replaces the Slack client factory for tests.
+// Pass nil to clear the override. Call ResetServices in a defer.
+func SetSlackClientForTest(fn func() (*slack.Client, error)) {
+	newSlackClientOverride = fn
+}
+
 // ResetServices restores the service factories to their production defaults.
 func ResetServices() {
 	newKeychainStore = defaultKeychainStore
 	newConfigManager = defaultConfigManager
+	newSlackClientOverride = nil
 }
