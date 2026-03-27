@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/magifd2/scli/internal/output"
@@ -9,27 +10,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newSlackClient resolves the current workspace token and returns a Slack client.
+// newSlackClient resolves the current workspace token and returns a Slack client
+// with the workspace-specific disk cache configured.
 func newSlackClient() (*slack.Client, error) {
-	token, err := resolveToken()
+	token, cacheDir, err := resolveTokenAndCacheDir()
 	if err != nil {
 		return nil, err
 	}
-	return slack.NewClient(token), nil
+	client := slack.NewClient(token)
+	client.SetCacheDir(cacheDir)
+	return client, nil
 }
 
-// resolveToken returns the token for the effective workspace.
-func resolveToken() (string, error) {
+// resolveTokenAndCacheDir returns the token and the workspace-specific cache
+// directory (~/.config/scli/cache/<workspace>/) for the effective workspace.
+func resolveTokenAndCacheDir() (token, cacheDir string, err error) {
 	mgr, err := newConfigManager()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	ws := workspace
 	if ws == "" {
 		cfg, err := mgr.Load()
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		ws = cfg.DefaultWorkspace
 		if ws == "" {
@@ -38,11 +43,11 @@ func resolveToken() (string, error) {
 	}
 
 	ks := newKeychainStore()
-	token, err := mgr.ResolveToken(ws, ks)
+	tok, err := mgr.ResolveToken(ws, ks)
 	if err != nil {
-		return "", fmt.Errorf("%w\nRun: scli auth login --workspace %s", err, ws)
+		return "", "", fmt.Errorf("%w\nRun: scli auth login --workspace %s", err, ws)
 	}
-	return token, nil
+	return tok, filepath.Join(mgr.ConfigDir(), "cache", ws), nil
 }
 
 // unescapeText converts escape sequences in user-supplied message text.

@@ -4,11 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path/filepath"
+	"time"
 )
 
+const channelCacheTTL = time.Hour
+
 // ListChannels returns all channels the authenticated user is a member of.
-// It handles cursor-based pagination automatically.
+// Results are cached on disk for channelCacheTTL to avoid repeated paginated fetches.
 func (c *Client) ListChannels(ctx context.Context) ([]Channel, error) {
+	if c.cacheDir != "" {
+		if channels, ok := loadCache[[]Channel](filepath.Join(c.cacheDir, "channels.json"), channelCacheTTL); ok {
+			return channels, nil
+		}
+	}
+
 	var all []Channel
 	cursor := ""
 
@@ -62,6 +72,9 @@ func (c *Client) ListChannels(ctx context.Context) ([]Channel, error) {
 		cursor = resp.ResponseMetadata.NextCursor
 	}
 
+	if c.cacheDir != "" {
+		saveCache(filepath.Join(c.cacheDir, "channels.json"), all)
+	}
 	return all, nil
 }
 

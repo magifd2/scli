@@ -18,6 +18,8 @@ type Client struct {
 	token      string
 	httpClient *http.Client
 	baseURL    string
+	cacheDir   string          // optional; empty = no disk cache
+	userByID   map[string]User // in-memory user cache, keyed by Slack user ID
 }
 
 // NewClient returns a Client authenticated with the given user token.
@@ -32,6 +34,12 @@ func NewClient(token string) *Client {
 // SetBaseURL overrides the Slack API base URL. Intended for tests.
 func (c *Client) SetBaseURL(u string) {
 	c.baseURL = u
+}
+
+// SetCacheDir enables disk caching of slow list endpoints (channels, users).
+// dir is workspace-specific and is created on first use.
+func (c *Client) SetCacheDir(dir string) {
+	c.cacheDir = dir
 }
 
 // apiResponse is the common envelope returned by every Slack Web API call.

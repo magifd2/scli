@@ -4,10 +4,32 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path/filepath"
+	"time"
 )
 
+const userCacheTTL = time.Hour
+
 // GetUser returns the User for the given Slack user ID.
+// It checks the in-memory cache first, then the on-disk user list cache,
+// and only falls back to an individual API call when necessary.
 func (c *Client) GetUser(ctx context.Context, userID string) (User, error) {
+	// 1. In-memory cache (populated by ListUsers or previous GetUser calls).
+	if u, ok := c.userByID[userID]; ok {
+		return u, nil
+	}
+
+	// 2. On-disk user list cache — load it into memory and retry.
+	if c.cacheDir != "" {
+		if users, ok := loadCache[[]User](filepath.Join(c.cacheDir, "users.json"), userCacheTTL); ok {
+			c.indexUsers(users)
+			if u, ok := c.userByID[userID]; ok {
+				return u, nil
+			}
+		}
+	}
+
+	// 3. Individual API call for users not in any cache (e.g. bots, new members).
 	params := url.Values{"user": {userID}}
 
 	var resp struct {
@@ -27,20 +49,31 @@ func (c *Client) GetUser(ctx context.Context, userID string) (User, error) {
 		return User{}, fmt.Errorf("users.info: %w", err)
 	}
 
-	u := resp.User
-	return User{
-		ID:          u.ID,
-		Name:        u.Name,
-		DisplayName: u.Profile.DisplayName,
-		RealName:    u.Profile.RealName,
-		IsBot:       u.IsBot,
-		IsDeleted:   u.Deleted,
-	}, nil
+	u := User{
+		ID:          resp.User.ID,
+		Name:        resp.User.Name,
+		DisplayName: resp.User.Profile.DisplayName,
+		RealName:    resp.User.Profile.RealName,
+		IsBot:       resp.User.IsBot,
+		IsDeleted:   resp.User.Deleted,
+	}
+	if c.userByID == nil {
+		c.userByID = make(map[string]User)
+	}
+	c.userByID[u.ID] = u
+	return u, nil
 }
 
 // ListUsers returns all non-deleted, non-bot workspace members.
-// It handles cursor-based pagination automatically.
+// Results are cached on disk for userCacheTTL to avoid repeated paginated fetches.
 func (c *Client) ListUsers(ctx context.Context) ([]User, error) {
+	if c.cacheDir != "" {
+		if users, ok := loadCache[[]User](filepath.Join(c.cacheDir, "users.json"), userCacheTTL); ok {
+			c.indexUsers(users)
+			return users, nil
+		}
+	}
+
 	var all []User
 	cursor := ""
 
@@ -88,7 +121,21 @@ func (c *Client) ListUsers(ctx context.Context) ([]User, error) {
 		cursor = resp.ResponseMetadata.NextCursor
 	}
 
+	if c.cacheDir != "" {
+		saveCache(filepath.Join(c.cacheDir, "users.json"), all)
+	}
+	c.indexUsers(all)
 	return all, nil
+}
+
+// indexUsers populates the in-memory userByID map from a slice of users.
+func (c *Client) indexUsers(users []User) {
+	if c.userByID == nil {
+		c.userByID = make(map[string]User, len(users))
+	}
+	for _, u := range users {
+		c.userByID[u.ID] = u
+	}
 }
 
 // ResolveUserName returns a human-readable name for the given user ID.
