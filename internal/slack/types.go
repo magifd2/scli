@@ -50,3 +50,14 @@ type User struct {
 	IsBot       bool
 	IsDeleted   bool
 }
+
+// UserProfile extends User with detailed profile fields returned by users.info.
+type UserProfile struct {
+	User
+	Title    string
+	Email    string
+	Phone    string
+	Status   string // status text
+	Emoji    string // status emoji
+	Timezone string // tz label, e.g. "Asia/Tokyo"
+}

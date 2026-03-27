@@ -206,6 +206,41 @@ func (p *Printer) Users(users []slack.User) error {
 	return nil
 }
 
+// UserProfile renders detailed profile information for a single user.
+func (p *Printer) UserProfile(profile slack.UserProfile) error {
+	if p.jsonOut {
+		return p.writeJSON(profile)
+	}
+
+	u := profile.User
+	name := p.userName("@" + u.Name)
+	if u.IsBot {
+		name += p.dimText(" [bot]")
+	}
+	fmt.Fprintln(p.w, name)
+
+	printField := func(label, value string) {
+		if value != "" {
+			fmt.Fprintf(p.w, "  %-12s %s\n", label+":", value)
+		}
+	}
+
+	printField("Real name", u.RealName)
+	printField("Display name", u.DisplayName)
+	printField("Title", profile.Title)
+	printField("Email", profile.Email)
+	printField("Phone", profile.Phone)
+	printField("Timezone", profile.Timezone)
+
+	status := profile.Status
+	if profile.Emoji != "" {
+		status = profile.Emoji + " " + status
+	}
+	printField("Status", status)
+
+	return nil
+}
+
 // Success prints a success message.
 func (p *Printer) Success(msg string) {
 	if !p.jsonOut {

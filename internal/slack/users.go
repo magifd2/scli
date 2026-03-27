@@ -138,6 +138,54 @@ func (c *Client) indexUsers(users []User) {
 	}
 }
 
+// GetUserProfile returns the full profile for the given Slack user ID,
+// including title, email, phone, status, and timezone.
+func (c *Client) GetUserProfile(ctx context.Context, userID string) (UserProfile, error) {
+	params := url.Values{"user": {userID}}
+
+	var resp struct {
+		User struct {
+			ID      string `json:"id"`
+			Name    string `json:"name"`
+			Deleted bool   `json:"deleted"`
+			IsBot   bool   `json:"is_bot"`
+			TZ      string `json:"tz"`
+			TZLabel string `json:"tz_label"`
+			Profile struct {
+				DisplayName string `json:"display_name"`
+				RealName    string `json:"real_name"`
+				Title       string `json:"title"`
+				Email       string `json:"email"`
+				Phone       string `json:"phone"`
+				StatusText  string `json:"status_text"`
+				StatusEmoji string `json:"status_emoji"`
+			} `json:"profile"`
+		} `json:"user"`
+	}
+
+	if err := c.get(ctx, "users.info", params, &resp); err != nil {
+		return UserProfile{}, fmt.Errorf("users.info: %w", err)
+	}
+
+	u := resp.User
+	return UserProfile{
+		User: User{
+			ID:          u.ID,
+			Name:        u.Name,
+			DisplayName: u.Profile.DisplayName,
+			RealName:    u.Profile.RealName,
+			IsBot:       u.IsBot,
+			IsDeleted:   u.Deleted,
+		},
+		Title:    u.Profile.Title,
+		Email:    u.Profile.Email,
+		Phone:    u.Profile.Phone,
+		Status:   u.Profile.StatusText,
+		Emoji:    u.Profile.StatusEmoji,
+		Timezone: u.TZLabel,
+	}, nil
+}
+
 // ResolveUserName returns a human-readable name for the given user ID.
 // It tries DisplayName first, then RealName, then the handle.
 // Falls back to the raw ID if the API call fails.
