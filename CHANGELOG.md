@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`scli channel export <channel>`**: Export full channel message history as JSON,
+  compatible with scat and stail export format.
+  - Threads are fully expanded: each reply appears immediately after its parent
+    with `is_reply=true` and `thread_timestamp_unix` set.
+  - `--output <path>` — write to file (`-` or omit for stdout)
+  - `--start <RFC3339>` / `--end <RFC3339>` — time range filtering
+  - `--save-dir <path>` — download attached files; `local_path` is set in output JSON
+  - New OAuth scope required: `files:read` (for file downloads)
+
 ## [1.2.0] - 2026-03-27
 
 ### Added

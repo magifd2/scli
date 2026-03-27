@@ -196,6 +196,11 @@ scli channel read <channel>             最近のメッセージを読む
   [--thread <timestamp>]                指定スレッドを表示
 scli channel info <channel>             チャンネルの詳細情報を表示
 scli channel search <query>             名前またはPurposeでチャンネルを検索
+scli channel export <channel>           チャンネル全履歴をJSONでエクスポート
+  [--output <path>]                     出力先ファイル（省略または"-"でstdout）
+  [--start <RFC3339>]                   指定時刻以降のメッセージを取得
+  [--end <RFC3339>]                     指定時刻以前のメッセージを取得
+  [--save-dir <path>]                   添付ファイルのダウンロード先ディレクトリ
 ```
 
 ### 投稿

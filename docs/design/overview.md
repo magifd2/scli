@@ -199,6 +199,11 @@ scli channel read <channel>             Reads recent messages
   [--thread <timestamp>]                Show a specific thread
 scli channel info <channel>             Shows detailed channel information
 scli channel search <query>             Searches channels by name or purpose
+scli channel export <channel>           Exports full message history as JSON
+  [--output <path>]                     Output file ("-" or omit for stdout)
+  [--start <RFC3339>]                   Export messages after this time
+  [--end <RFC3339>]                     Export messages before this time
+  [--save-dir <path>]                   Download attached files to this directory
 ```
 
 ### Post
