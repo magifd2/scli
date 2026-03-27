@@ -3,7 +3,7 @@ package keychain_test
 import (
 	"testing"
 
-	"github.com/magifd2/scli/internal/keychain"
+	"github.com/nlink-jp/scli/internal/keychain"
 )
 
 func TestMockStore(t *testing.T) {

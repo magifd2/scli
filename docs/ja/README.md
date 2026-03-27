@@ -20,7 +20,7 @@
 ### ソースからビルド
 
 ```sh
-git clone https://github.com/magifd2/scli.git
+git clone https://github.com/nlink-jp/scli.git
 cd scli
 make build          # 現在のプラットフォーム向けにビルド → dist/scli
 make build-all      # 全対象プラットフォームにクロスコンパイル

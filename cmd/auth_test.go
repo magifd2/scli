@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magifd2/scli/cmd"
-	"github.com/magifd2/scli/internal/config"
-	"github.com/magifd2/scli/internal/keychain"
+	"github.com/nlink-jp/scli/cmd"
+	"github.com/nlink-jp/scli/internal/config"
+	"github.com/nlink-jp/scli/internal/keychain"
 )
 
 func TestAuthList_Empty(t *testing.T) {

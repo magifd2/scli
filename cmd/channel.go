@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/slack"
 	"github.com/spf13/cobra"
 )
 

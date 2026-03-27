@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/slack"
 )
 
 // Printer renders scli output to an io.Writer with optional color and JSON support.

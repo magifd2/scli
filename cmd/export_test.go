@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magifd2/scli/cmd"
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/cmd"
+	"github.com/nlink-jp/scli/internal/slack"
 )
 
 func newExportTestServer(t *testing.T) *httptest.Server {

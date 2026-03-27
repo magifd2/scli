@@ -103,4 +103,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Git pre-commit and pre-push hooks
 - Design documents and setup guide in English and Japanese
 
-[1.0.0]: https://github.com/magifd2/scli/releases/tag/v1.0.0
+[1.0.0]: https://github.com/nlink-jp/scli/releases/tag/v1.0.0

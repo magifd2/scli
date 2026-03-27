@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/magifd2/scli/internal/auth"
-	"github.com/magifd2/scli/internal/config"
+	"github.com/nlink-jp/scli/internal/auth"
+	"github.com/nlink-jp/scli/internal/config"
 	"github.com/spf13/cobra"
 )
 

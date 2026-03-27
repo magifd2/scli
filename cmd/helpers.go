@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/magifd2/scli/internal/output"
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/output"
+	"github.com/nlink-jp/scli/internal/slack"
 	"github.com/spf13/cobra"
 )
 

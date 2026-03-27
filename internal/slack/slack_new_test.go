@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/slack"
 )
 
 // ---------------------------------------------------------------------------

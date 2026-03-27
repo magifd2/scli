@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/magifd2/scli/cmd"
+	"github.com/nlink-jp/scli/cmd"
 )
 
 func TestRootCommandHelp(t *testing.T) {

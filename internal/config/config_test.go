@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/magifd2/scli/internal/config"
-	"github.com/magifd2/scli/internal/keychain"
+	"github.com/nlink-jp/scli/internal/config"
+	"github.com/nlink-jp/scli/internal/keychain"
 )
 
 func TestLoad_EmptyWhenFileNotExist(t *testing.T) {

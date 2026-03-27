@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/slack"
 )
 
 // newTestClient creates a Client pointing at the given test server.

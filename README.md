@@ -20,7 +20,7 @@ Read channels, send messages, search, and manage DMs — all without leaving you
 ### Build from source
 
 ```sh
-git clone https://github.com/magifd2/scli.git
+git clone https://github.com/nlink-jp/scli.git
 cd scli
 make build          # builds for the current platform → dist/scli
 make build-all      # cross-compiles for all target platforms

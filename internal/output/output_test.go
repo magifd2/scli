@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magifd2/scli/internal/output"
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/output"
+	"github.com/nlink-jp/scli/internal/slack"
 )
 
 func newTestPrinter(buf *bytes.Buffer) *output.Printer {

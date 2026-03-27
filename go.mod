@@ -1,4 +1,4 @@
-module github.com/magifd2/scli
+module github.com/nlink-jp/scli
 
 go 1.26.1
 

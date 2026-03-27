@@ -2,7 +2,7 @@
 package main
 
 import (
-	"github.com/magifd2/scli/cmd"
+	"github.com/nlink-jp/scli/cmd"
 )
 
 func main() {

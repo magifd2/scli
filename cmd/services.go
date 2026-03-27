@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/magifd2/scli/internal/config"
-	"github.com/magifd2/scli/internal/keychain"
-	"github.com/magifd2/scli/internal/slack"
+	"github.com/nlink-jp/scli/internal/config"
+	"github.com/nlink-jp/scli/internal/keychain"
+	"github.com/nlink-jp/scli/internal/slack"
 )
 
 // Service factories — overridable in tests.
