@@ -206,6 +206,48 @@ func (p *Printer) Users(users []slack.User) error {
 	return nil
 }
 
+// ChannelDetail renders detailed information for a single channel.
+func (p *Printer) ChannelDetail(detail slack.ChannelDetail, creatorName string) error {
+	if p.jsonOut {
+		return p.writeJSON(detail)
+	}
+
+	ch := detail.Channel
+	fmt.Fprintln(p.w, p.channelName("#"+ch.Name))
+
+	printField := func(label, value string) {
+		if value != "" {
+			fmt.Fprintf(p.w, "  %-12s %s\n", label+":", value)
+		}
+	}
+
+	printField("ID", ch.ID)
+
+	kind := "public"
+	if detail.IsPrivate {
+		kind = "private"
+	}
+	if detail.IsGeneral {
+		kind += ", general"
+	}
+	if detail.IsArchived {
+		kind += ", archived"
+	}
+	printField("Type", kind)
+
+	if detail.NumMembers > 0 {
+		printField("Members", fmt.Sprintf("%d", detail.NumMembers))
+	}
+	if detail.Created > 0 {
+		printField("Created", time.Unix(detail.Created, 0).Local().Format("2006-01-02"))
+	}
+	printField("Creator", creatorName)
+	printField("Topic", detail.Topic)
+	printField("Purpose", ch.Purpose)
+
+	return nil
+}
+
 // UserProfile renders detailed profile information for a single user.
 func (p *Printer) UserProfile(profile slack.UserProfile) error {
 	if p.jsonOut {
@@ -225,6 +267,7 @@ func (p *Printer) UserProfile(profile slack.UserProfile) error {
 		}
 	}
 
+	printField("ID", u.ID)
 	printField("Real name", u.RealName)
 	printField("Display name", u.DisplayName)
 	printField("Title", profile.Title)

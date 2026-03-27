@@ -51,6 +51,18 @@ type User struct {
 	IsDeleted   bool
 }
 
+// ChannelDetail extends Channel with detailed metadata returned by conversations.info.
+type ChannelDetail struct {
+	Channel
+	Topic      string
+	NumMembers int
+	Creator    string // creator user ID
+	Created    int64  // Unix timestamp
+	IsArchived bool
+	IsGeneral  bool
+	IsPrivate  bool
+}
+
 // UserProfile extends User with detailed profile fields returned by users.info.
 type UserProfile struct {
 	User

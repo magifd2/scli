@@ -33,13 +33,42 @@ var channelReadCmd = &cobra.Command{
 	RunE:  runChannelRead,
 }
 
+var channelInfoCmd = &cobra.Command{
+	Use:   "info <channel>",
+	Short: "Show detailed information about a channel",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runChannelInfo,
+}
+
 func init() {
 	channelReadCmd.Flags().IntVarP(&channelReadLimit, "limit", "n", 20, "Number of messages to fetch")
 	channelReadCmd.Flags().BoolVar(&channelReadUnread, "unread", false, "Show only unread messages")
 	channelReadCmd.Flags().StringVar(&channelReadThread, "thread", "", "Show a specific thread (message timestamp)")
 
-	channelCmd.AddCommand(channelListCmd, channelReadCmd)
+	channelCmd.AddCommand(channelListCmd, channelReadCmd, channelInfoCmd)
 	rootCmd.AddCommand(channelCmd)
+}
+
+func runChannelInfo(cmd *cobra.Command, args []string) error {
+	client, err := newSlackClient()
+	if err != nil {
+		return err
+	}
+
+	channelID, err := client.ResolveChannelID(cmd.Context(), args[0])
+	if err != nil {
+		return err
+	}
+
+	detail, err := client.GetChannelDetail(cmd.Context(), channelID)
+	if err != nil {
+		return fmt.Errorf("get channel info: %w", err)
+	}
+
+	creatorName := client.ResolveUserName(cmd.Context(), detail.Creator)
+
+	p := newPrinter(cmd)
+	return p.ChannelDetail(detail, creatorName)
 }
 
 const threadFetchConcurrency = 10

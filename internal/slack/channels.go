@@ -146,6 +146,51 @@ type ChannelInfo struct {
 	UnreadCount int
 }
 
+// GetChannelDetail returns detailed metadata for a channel, including topic,
+// member count, creator, and creation time.
+func (c *Client) GetChannelDetail(ctx context.Context, channelID string) (ChannelDetail, error) {
+	params := url.Values{"channel": {channelID}}
+
+	var resp struct {
+		Channel struct {
+			ID         string `json:"id"`
+			Name       string `json:"name"`
+			IsArchived bool   `json:"is_archived"`
+			IsGeneral  bool   `json:"is_general"`
+			IsPrivate  bool   `json:"is_private"`
+			Created    int64  `json:"created"`
+			Creator    string `json:"creator"`
+			NumMembers int    `json:"num_members"`
+			Topic      struct {
+				Value string `json:"value"`
+			} `json:"topic"`
+			Purpose struct {
+				Value string `json:"value"`
+			} `json:"purpose"`
+		} `json:"channel"`
+	}
+
+	if err := c.get(ctx, "conversations.info", params, &resp); err != nil {
+		return ChannelDetail{}, fmt.Errorf("conversations.info: %w", err)
+	}
+
+	ch := resp.Channel
+	return ChannelDetail{
+		Channel: Channel{
+			ID:      ch.ID,
+			Name:    ch.Name,
+			Purpose: ch.Purpose.Value,
+		},
+		Topic:      ch.Topic.Value,
+		NumMembers: ch.NumMembers,
+		Creator:    ch.Creator,
+		Created:    ch.Created,
+		IsArchived: ch.IsArchived,
+		IsGeneral:  ch.IsGeneral,
+		IsPrivate:  ch.IsPrivate,
+	}, nil
+}
+
 // GetChannelInfo returns metadata for the given channel, including last-read
 // timestamp and unread message count.
 func (c *Client) GetChannelInfo(ctx context.Context, channelID string) (ChannelInfo, error) {
