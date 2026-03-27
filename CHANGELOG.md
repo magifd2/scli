@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **HTTP 429 retry**: The Slack API client now automatically retries rate-limited requests,
+  honouring the `Retry-After` header (+1 s buffer) with up to 3 attempts before returning an error.
+- **Disk cache for channels and users**: `channel list` and `user list` API calls are cached to disk
+  with a 1-hour TTL at `~/.config/scli/cache/<workspace>/`. Eliminates repeated full-list fetches
+  in large workspaces. Cache is workspace-specific to prevent cross-workspace contamination.
+- **In-memory user cache**: `GetUser` additionally caches results in-memory for the duration of
+  a single process, avoiding redundant API calls during username resolution.
+- **`scli channel info <channel>`**: Shows detailed channel information (topic, purpose, member count,
+  creator, creation date, visibility flags).
+- **`scli channel search <query>`**: Searches joined channels by name or purpose (uses disk cache).
+- **`scli user info <user>`**: Shows detailed user profile (display name, real name, title, email,
+  phone, status, timezone, user ID).
+- **`scli user search <query>`**: Searches workspace members by name or display name (uses disk cache).
+- **`scli cache clear`**: Removes cached channel and user data for the current workspace.
+
 ## [1.1.0] - 2026-03-23
 
 ### Added

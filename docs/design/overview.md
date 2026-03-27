@@ -12,7 +12,7 @@ eliminating the context switch to a GUI client.
 
 - **Security first** — tokens are stored in the OS keychain by default; plaintext fallbacks are opt-in.
 - **Small and focused** — each command does one thing; no background daemon required.
-- **Separation of concerns** — CLI layer, API layer, auth layer, config layer, and output layer are independent.
+- **Separation of concerns** — CLI layer, API layer, auth layer, config layer, cache layer, and output layer are independent.
 - **Testable** — all layers are connected via interfaces; I/O and business logic are never mixed.
 
 ---
@@ -29,6 +29,10 @@ User (terminal)
          │
   ┌──────┴──────┐
   │ Auth Layer  │  ← token resolution (env → config → keychain)
+  └──────┬──────┘
+         │
+  ┌──────┴──────┐
+  │ Cache Layer │  ← disk TTL cache + in-memory cache
   └──────┬──────┘
          │
   ┌──────┴──────┐
@@ -55,11 +59,13 @@ cmd/
   root.go          # global flags: --workspace, --json, --no-color
   auth.go          # auth login / logout / list
   workspace.go     # workspace list / use
-  channel.go       # channel list / read / post
+  channel.go       # channel list / read / info / search
+  post.go          # post (with --blocks / --blocks-file support)
   dm.go            # dm list / send / read
   unread.go        # unread
   search.go        # search
-  user.go          # user list (for DM target resolution)
+  user.go          # user list / info / search
+  cache.go         # cache clear
 ```
 
 ### 4.2 internal/auth/
@@ -78,7 +84,7 @@ Token and workspace profile management.
 
 ```
 1. Environment variable  SLACK_TOKEN_<WORKSPACE>  (or SLACK_TOKEN for default)
-2. .env file             (project-local or ~/.config/scli/.env)
+2. .env file             (current directory, or ~/.config/scli/.env)
 3. Config file           ~/.config/scli/config.json
 4. OS keychain           (see internal/keychain/)
 ```
@@ -124,6 +130,18 @@ type Store interface {
 
 Slack Web API client. Each method maps to one API endpoint.
 
+**Caching** (for large-workspace performance):
+
+- `ListChannels` and `ListUsers` cache results to disk with a 1-hour TTL.
+  Cache location: `~/.config/scli/cache/<workspace>/` (workspace-specific to prevent cross-workspace contamination).
+- `GetUser` additionally maintains an in-memory `map[string]User` for repeated lookups within a single process.
+- `cache clear` removes the workspace cache directory.
+
+**Rate limiting**:
+
+The HTTP client automatically retries on HTTP 429 responses, honouring the `Retry-After` header
+(+1 s buffer) with up to 3 attempts before returning an error.
+
 Required OAuth scopes (user token):
 
 | Scope | Purpose |
@@ -140,7 +158,7 @@ Required OAuth scopes (user token):
 | `chat:write` | Post messages |
 | `files:write` | Upload files |
 | `search:read` | Search messages |
-| `users:read` | Resolve user names |
+| `users:read` | Resolve user names and profiles |
 
 ### 4.6 internal/output/
 
@@ -179,10 +197,22 @@ scli channel read <channel>             Reads recent messages
   [--limit N]                           Number of messages (default: 20)
   [--unread]                            Only show messages since last read
   [--thread <timestamp>]                Show a specific thread
-scli post <channel> <message>           Posts a message
-  [--file <path>]                       Attach a file
-  [--thread <timestamp>]                Reply in a thread
+scli channel info <channel>             Shows detailed channel information
+scli channel search <query>             Searches channels by name or purpose
 ```
+
+### Post
+
+```
+scli post <channel> [message]           Posts a message
+  [--thread <timestamp>]                Reply in a thread
+  [--file <path>]                       Attach a file
+  [--blocks <json>]                     Post using Block Kit JSON (inline string)
+  [--blocks-file <path>]                Post using Block Kit JSON from a file (- for stdin)
+```
+
+Note: `[message]` is optional when `--blocks` or `--blocks-file` is provided
+(used as the notification fallback text).
 
 ### DM
 
@@ -212,7 +242,15 @@ scli search <query>                     Searches messages
 ### User
 
 ```
-scli user list                          Lists workspace members (for DM target resolution)
+scli user list                          Lists workspace members
+scli user info <user>                   Shows detailed profile information for a user
+scli user search <query>                Searches users by name or display name
+```
+
+### Cache
+
+```
+scli cache clear                        Removes cached channel and user data for the current workspace
 ```
 
 ---
@@ -228,7 +266,7 @@ When a command accepts `<channel>` or `<user>`, `scli` resolves as follows:
 
 ---
 
-## 7. Directory Layout (planned)
+## 7. Directory Layout
 
 ```
 scli/
@@ -237,7 +275,7 @@ scli/
     auth/               OAuth flow
     config/             Configuration & token resolution
     keychain/           OS keychain abstraction
-    slack/              Slack API client
+    slack/              Slack API client (includes disk/memory cache)
     output/             Formatter (color / JSON)
   docs/
     design/             Design documents (English)
@@ -257,6 +295,7 @@ scli/
 
 - API errors are surfaced with the Slack error code and a human-readable message.
 - Network errors suggest checking connectivity or token validity.
+- HTTP 429 (rate limit) errors are retried automatically; an error is returned only after all retries are exhausted.
 - All errors exit with a non-zero status code (suitable for scripting).
 
 ---
