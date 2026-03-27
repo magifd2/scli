@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -69,36 +70,66 @@ func (c *Client) post(ctx context.Context, method string, params url.Values, dst
 	return c.do(req, dst)
 }
 
+// do executes req, retrying up to maxRetries times on HTTP 429 responses.
+// It honours the Retry-After header returned by Slack and cancels early if
+// the request context is done.
 func (c *Client) do(req *http.Request, dst interface{}) error {
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP request: %w", err)
-	}
-	defer resp.Body.Close()
+	const maxRetries = 3
 
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return fmt.Errorf("rate limited by Slack (HTTP 429) — please wait and retry")
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected HTTP status: %s", resp.Status)
+	for attempt := range maxRetries {
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("HTTP request: %w", err)
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests {
+			wait := retryAfterDuration(resp.Header.Get("Retry-After"))
+			resp.Body.Close() //nolint:errcheck
+			if attempt == maxRetries-1 {
+				break
+			}
+			select {
+			case <-time.After(wait):
+			case <-req.Context().Done():
+				return req.Context().Err()
+			}
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close() //nolint:errcheck
+			return fmt.Errorf("unexpected HTTP status: %s", resp.Status)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close() //nolint:errcheck
+		if err != nil {
+			return fmt.Errorf("read response body: %w", err)
+		}
+
+		// Check the Slack-level ok/error fields first.
+		var base apiResponse
+		if err := json.Unmarshal(body, &base); err != nil {
+			return fmt.Errorf("decode response: %w", err)
+		}
+		if !base.OK {
+			return fmt.Errorf("slack API error: %s", base.Error)
+		}
+
+		if err := json.Unmarshal(body, dst); err != nil {
+			return fmt.Errorf("decode response payload: %w", err)
+		}
+		return nil
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response body: %w", err)
-	}
+	return fmt.Errorf("rate limited by Slack (HTTP 429): still throttled after %d attempts", maxRetries)
+}
 
-	// Check the Slack-level ok/error fields first.
-	var base apiResponse
-	if err := json.Unmarshal(body, &base); err != nil {
-		return fmt.Errorf("decode response: %w", err)
+// retryAfterDuration parses the Retry-After header value (seconds) and returns
+// the corresponding duration plus a one-second buffer. Falls back to 5 seconds.
+func retryAfterDuration(header string) time.Duration {
+	if n, err := strconv.Atoi(header); err == nil && n > 0 {
+		return time.Duration(n+1) * time.Second
 	}
-	if !base.OK {
-		return fmt.Errorf("slack API error: %s", base.Error)
-	}
-
-	if err := json.Unmarshal(body, dst); err != nil {
-		return fmt.Errorf("decode response payload: %w", err)
-	}
-	return nil
+	return 5 * time.Second
 }

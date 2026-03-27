@@ -21,6 +21,7 @@ linters:
     gosec:
       excludes:
         - G101  # false positive: URL constants and test tokens are not credentials
+        - G104  # duplicate of errcheck: Close errors on response bodies are not actionable
         - G704  # false positive: URL is constructed from a controlled base URL
         - G120  # false positive: test servers only, no production risk
         - G304  # intentional: user-supplied file path for upload command
