@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.22 or later
+- Go 1.26 or later
 - GNU Make
 - A Slack workspace where you have permission to install apps
 
@@ -37,8 +37,9 @@ Scroll down to **User Token Scopes** (not Bot Token Scopes) and add:
 | `mpim:history` | Read group DM messages |
 | `chat:write` | Post messages |
 | `files:write` | Upload files |
+| `files:read` | Download attached files (`channel export --save-dir`) |
 | `search:read` | Search messages |
-| `users:read` | Resolve user names |
+| `users:read` | Resolve user names and profiles |
 
 ### 1-3. Set the redirect URL
 

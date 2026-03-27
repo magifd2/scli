@@ -2,7 +2,7 @@
 
 ## 前提条件
 
-- Go 1.22 以降
+- Go 1.26 以降
 - GNU Make
 - アプリをインストールできる権限を持つ Slack ワークスペース
 
@@ -37,8 +37,9 @@
 | `mpim:history` | グループDMメッセージ読み取り |
 | `chat:write` | メッセージ投稿 |
 | `files:write` | ファイルアップロード |
+| `files:read` | 添付ファイルのダウンロード（`channel export --save-dir`） |
 | `search:read` | メッセージ検索 |
-| `users:read` | ユーザー名解決 |
+| `users:read` | ユーザー名・プロフィール解決 |
 
 ### 1-3. リダイレクトURLの設定
 
