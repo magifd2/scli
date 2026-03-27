@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/magifd2/scli/internal/slack"
@@ -40,13 +41,50 @@ var channelInfoCmd = &cobra.Command{
 	RunE:  runChannelInfo,
 }
 
+var channelSearchCmd = &cobra.Command{
+	Use:   "search <query>",
+	Short: "Search channels by name or purpose",
+	Args:  cobra.MinimumNArgs(1),
+	RunE:  runChannelSearch,
+}
+
 func init() {
 	channelReadCmd.Flags().IntVarP(&channelReadLimit, "limit", "n", 20, "Number of messages to fetch")
 	channelReadCmd.Flags().BoolVar(&channelReadUnread, "unread", false, "Show only unread messages")
 	channelReadCmd.Flags().StringVar(&channelReadThread, "thread", "", "Show a specific thread (message timestamp)")
 
-	channelCmd.AddCommand(channelListCmd, channelReadCmd, channelInfoCmd)
+	channelCmd.AddCommand(channelListCmd, channelReadCmd, channelInfoCmd, channelSearchCmd)
 	rootCmd.AddCommand(channelCmd)
+}
+
+func runChannelSearch(cmd *cobra.Command, args []string) error {
+	query := strings.ToLower(strings.Join(args, " "))
+
+	client, err := newSlackClient()
+	if err != nil {
+		return err
+	}
+
+	channels, err := client.ListChannels(cmd.Context())
+	if err != nil {
+		return fmt.Errorf("list channels: %w", err)
+	}
+
+	var matches []slack.Channel
+	for _, ch := range channels {
+		if strings.Contains(strings.ToLower(ch.Name), query) ||
+			strings.Contains(strings.ToLower(ch.Purpose), query) {
+			matches = append(matches, ch)
+		}
+	}
+
+	if len(matches) == 0 {
+		fmt.Fprintf(cmd.OutOrStdout(), "No channels found matching %q.\n", query)
+		return nil
+	}
+
+	p := newPrinter(cmd)
+	return p.Channels(matches, "")
 }
 
 func runChannelInfo(cmd *cobra.Command, args []string) error {

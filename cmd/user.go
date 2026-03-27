@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/magifd2/scli/internal/slack"
 	"github.com/spf13/cobra"
 )
 
@@ -24,10 +26,47 @@ var userInfoCmd = &cobra.Command{
 	RunE:  runUserInfo,
 }
 
+var userSearchCmd = &cobra.Command{
+	Use:   "search <query>",
+	Short: "Search users by name or display name",
+	Args:  cobra.MinimumNArgs(1),
+	RunE:  runUserSearch,
+}
+
 func init() {
-	userCmd.AddCommand(userListCmd)
-	userCmd.AddCommand(userInfoCmd)
+	userCmd.AddCommand(userListCmd, userInfoCmd, userSearchCmd)
 	rootCmd.AddCommand(userCmd)
+}
+
+func runUserSearch(cmd *cobra.Command, args []string) error {
+	query := strings.ToLower(strings.Join(args, " "))
+
+	client, err := newSlackClient()
+	if err != nil {
+		return err
+	}
+
+	users, err := client.ListUsers(cmd.Context())
+	if err != nil {
+		return fmt.Errorf("list users: %w", err)
+	}
+
+	var matches []slack.User
+	for _, u := range users {
+		if strings.Contains(strings.ToLower(u.Name), query) ||
+			strings.Contains(strings.ToLower(u.DisplayName), query) ||
+			strings.Contains(strings.ToLower(u.RealName), query) {
+			matches = append(matches, u)
+		}
+	}
+
+	if len(matches) == 0 {
+		fmt.Fprintf(cmd.OutOrStdout(), "No users found matching %q.\n", query)
+		return nil
+	}
+
+	p := newPrinter(cmd)
+	return p.Users(matches)
 }
 
 func runUserInfo(cmd *cobra.Command, args []string) error {
